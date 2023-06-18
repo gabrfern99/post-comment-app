@@ -29,3 +29,32 @@ class Comment(db.Model):
     post = db.relationship('Post', backref=db.backref('comments', lazy=True))
     user = db.relationship('User', backref=db.backref('comments', lazy=True))
 
+# Set up user authentication
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# Login and registration routes
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        if user and user.password == password:
+            login_user(user)
+            return redirect(url_for('home'))
+        else:
+            return 'Invalid username or password'
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User(username=username, password=password)
+        db.session.add(user)
+        db.session.commit()
+        return redirect(url_for('login'))
+    return render_template('register.html')
