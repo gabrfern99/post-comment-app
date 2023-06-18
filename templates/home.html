@@ -2,27 +2,89 @@
 <html>
 <head>
     <title>Home</title>
+        <link rel="stylesheet" href= "{{ url_for('static',filename='styles/bootstrap.min.css') }}">
+
+    <style>
+        body {
+            padding: 20px;
+        }
+
+        .post-card {
+            margin-bottom: 20px;
+        }
+
+        .comment-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .comment-content {
+            margin-left: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Post and Comment Application</h1>
-
-    <h2>Recent Posts:</h2>
-    <ul>
-        {% for post in posts %}
-            <li>
-                <h3>{{ post.title }}</h3>
-                <p>{{ post.content }}</p>
-                <p>By: {{ post.user.username }}</p>
-            </li>
-        {% endfor %}
-    </ul>
-
-    {% if current_user.is_authenticated %}
-        <p><a href="{{ url_for('create_post') }}">Create a new post</a></p>
-        <p><a href="{{ url_for('logout') }}">Logout</a></p>
-    {% else %}
-    <p><a href="{{ url_for('login') }}">Login</a></p>
-        <p><a href="{{ url_for('register') }}">Register</a></p>
-    {% endif %}
+    <div class="container">
+        {% if current_user.is_authenticated %}
+        <div class="row">
+            <div class="col-md-6">
+                <h2>Welcome, {{ current_user.username }}!</h2>
+                <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+            </div>
+            <div class="col-md-6">
+                <h2>Create Post</h2>
+                <a href="{{ url_for('create_post') }}" class="btn btn-primary">Create Post</a>
+            </div>
+        </div>
+        {% else %}
+        <div class="row">
+            <div class="col-md-6">
+                <h2>Login</h2>
+                <a href="{{ url_for('login') }}" class="btn btn-primary">Login</a>
+            </div>
+            <div class="col-md-6">
+                <h2>Register</h2>
+                <a href="{{ url_for('register') }}" class="btn btn-primary">Register</a>
+            </div>
+        </div>
+        {% endif %}
+        <div class="row">
+            <div class="col-md-12">
+                <h2>All Posts</h2>
+                {% for post in posts %}
+                <div class="card post-card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ post.title }}</h5>
+                        <p class="card-text">{{ post.content }}</p>
+                        <h6 class="card-subtitle mb-2 text-muted">Comments:</h6>
+                        <div class="comments-container">
+                            {% for comment in post.comments %}
+                            <div class="comment-container">
+                                <div class="comment-content">
+                                    <p>{{ comment.content }}</p>
+                                    <small class="text-muted">by {{ comment.commenter.username }}</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <form action="{{ url_for('add_comment', post_id=post.id) }}" method="POST">
+                            <div class="form-group">
+                                <textarea name="content" class="form-control" placeholder="Add a comment" rows="3" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit Comment</button>
+                        </form>
+                {% if current_user.is_authenticated and current_user.id == post.user_id %}
+      <form action="{{ url_for('delete_post', post_id=post.id) }}" method="POST" class="d-inline">
+        <button type="submit" class="btn btn-danger">Delete</button>
+      </form>
+      {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 </body>
 </html>
+
