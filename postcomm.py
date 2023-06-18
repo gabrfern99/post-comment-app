@@ -1,7 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_wtf import FlaskForm
+from wtforms import TextAreaField, SubmitField
+from wtforms.validators import DataRequired
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'teste123'
@@ -16,20 +19,26 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True)
     password = db.Column(db.String(20))
+    comments_received = db.relationship('Comment', backref='receiver', lazy=True)
 
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100))
     content = db.Column(db.Text)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref=db.backref('posts', lazy=True))
+    comments = db.relationship('Comment', backref='post', lazy=True)
 
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    post = db.relationship('Post', backref=db.backref('comments', lazy=True))
-    user = db.relationship('User', backref=db.backref('comments', lazy=True))
+    commenter = db.relationship('User', backref=db.backref('comments_made', lazy=True))
+
+class CommentForm(FlaskForm):
+    content = TextAreaField('Content', validators=[DataRequired()])
+    submit = SubmitField('Add Comment')
 
 # Set up user authentication
 @login_manager.user_loader
@@ -65,7 +74,9 @@ def register():
 @app.route('/')
 def home():
     posts = Post.query.all()
-    return render_template('home.html', posts=posts)
+    form = CommentForm()  # Create an instance of the CommentForm
+
+    return render_template('home.html', posts=posts, form=form)
 
 @app.route('/create_post', methods=['GET', 'POST'])
 @login_required
@@ -90,6 +101,21 @@ def post_details(post_id):
         return redirect(url_for('post_details', post_id=post.id))
     return render_template('post_details.html', post=post)
 
+@app.route('/view_post/<int:post_id>', methods=['GET', 'POST'])
+def view_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    comment_form = CommentForm()
+
+    if comment_form.validate_on_submit():
+        # Create a new comment
+        comment = Comment(content=comment_form.content.data, post=post, user=current_user)
+        db.session.add(comment)
+        db.session.commit()
+        flash('Your comment has been added!', 'success')
+        return redirect(url_for('view_post', post_id=post_id))
+
+    return render_template('view_post.html', post=post, comment_form=comment_form, form=comment_form)
+
 @app.route('/post/<int:post_id>/comment', methods=['POST'])
 @login_required
 def add_comment(post_id):
@@ -97,7 +123,21 @@ def add_comment(post_id):
     comment = Comment(content=content, post_id=post_id, user_id=current_user.id)
     db.session.add(comment)
     db.session.commit()
-    return redirect(url_for('post_details', post_id=post_id))
+    #return redirect(url_for('post_details', post_id=post_id))
+    return redirect(url_for('home'))
+
+@app.route('/delete_post/<int:post_id>', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if post.user != current_user:
+        flash('You do not have permission to delete this post.', 'danger')
+        return redirect(url_for('home'))
+    db.session.delete(post)
+    db.session.commit()
+    flash('Post deleted successfully.', 'success')
+    return redirect(url_for('home'))
+
 
 @app.route('/logout')
 @login_required
