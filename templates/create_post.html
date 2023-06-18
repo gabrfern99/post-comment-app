@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Post</title>
+      <link rel="stylesheet" href= "{{ url_for('static',filename='styles/bootstrap.min.css') }}">
+</head>
+<body>
+    <h1>Create Post</h1>
+    <form action="/create_post" method="POST" class="container">
+        <div class="mb-3">
+          <label for="title" class="form-label">Title:</label>
+          <input type="text" id="title" name="title" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label for="content" class="form-label">Content:</label>
+          <textarea id="content" name="content" class="form-control" required></textarea>
+        </div>
+      <input type="submit" value="Create" class="btn btn-primary mt-3">
+    </form>
+</body>
+</html>
+
