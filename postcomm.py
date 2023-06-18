@@ -58,3 +58,51 @@ def register():
         db.session.commit()
         return redirect(url_for('login'))
     return render_template('register.html')
+
+# Post and comment functionality
+@app.route('/')
+def home():
+    posts = Post.query.all()
+    return render_template('home.html', posts=posts)
+
+@app.route('/create_post', methods=['GET', 'POST'])
+@login_required
+def create_post():
+    if request.method == 'POST':
+        title = request.form['title']
+        content = request.form['content']
+        post = Post(title=title, content=content, user_id=current_user.id)
+        db.session.add(post)
+        db.session.commit()
+        return redirect(url_for('home'))
+    return render_template('create_post.html')
+
+@app.route('/post/<int:post_id>', methods=['GET', 'POST'])
+def post_details(post_id):
+    post = Post.query.get(post_id)
+    if request.method == 'POST':
+        content = request.form['content']
+        comment = Comment(content=content, post_id=post.id, user_id=current_user.id)
+        db.session.add(comment)
+        db.session.commit()
+        return redirect(url_for('post_details', post_id=post.id))
+    return render_template('post_details.html', post=post)
+
+@app.route('/post/<int:post_id>/comment', methods=['POST'])
+@login_required
+def add_comment(post_id):
+    content = request.form['content']
+    comment = Comment(content=content, post_id=post_id, user_id=current_user.id)
+    db.session.add(comment)
+    db.session.commit()
+    return redirect(url_for('post_details', post_id=post_id))
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('home'))
+
+if __name__ == '__main__':
+    app.run()
+
