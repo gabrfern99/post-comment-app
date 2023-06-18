@@ -1,1 +1,32 @@
-<h1>test</h1>
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Login - PostComm</title>
+    <link rel="stylesheet" href= "{{ url_for('static',filename='styles/bootstrap.min.css') }}"> 
+	<style type="text/css">
+		.container{
+			margin-top: 8%;
+			width: 400px;
+			border: ridge 1.5px white;
+			padding: 20px;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h2>Login</h2>
+	<form action="/login" method="post">
+		<div class="form-group">
+    <label for="firstname">Username</label>
+    <input type="text" class="form-control" id="exampleInputfirstname" name="username">
+  </div>
+  <div class="form-group">
+    <label for="Password">Password</label>
+    <input type="password" class="form-control" id="exampleInputPassword" name="password">
+  </div>
+  <button type="submit" class="btn btn-primary" name="create">Login</button>
+</form>
+</div>
+</body>
+</html>
+
